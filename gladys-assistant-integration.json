@@ -1,177 +1,1021 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Webmin",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Your Linux servers through Webmin: package updates, security, reboot, load, disks.",
+    "fr": "Vos serveurs Linux via Webmin : mises à jour, sécurité, redémarrage, charge, disques.",
+    "de": "Deine Linux-Server über Webmin: Paketupdates, Sicherheit, Neustart, Last, Datenträger.",
+    "es": "Sus servidores Linux con Webmin: actualizaciones, seguridad, reinicio, carga, discos."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-webmin:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
-  "config_schema": [
-    {
-      "key": "intro",
-      "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
-      "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
-      },
-      "links": [
-        {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
-        }
-      ]
-    },
-    {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
-    },
-    {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
-      },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
-    },
-    {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
-      "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
-      },
-      "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
-    }
-  ],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-webmin/main/cover.png",
+  "categories": ["network"],
+  "transports": ["local"],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads every configured Webmin server now, updates included, and says what it found.",
+        "fr": "Lit maintenant chaque serveur Webmin configuré, mises à jour comprises, et dit ce qu'il a trouvé.",
+        "de": "Liest jetzt jeden konfigurierten Webmin-Server samt Updates und sagt, was gefunden wurde.",
+        "es": "Lee ahora cada servidor Webmin configurado, actualizaciones incluidas, e indica lo que ha encontrado."
+      },
+      "timeout_seconds": 120
+    }
+  ],
+  "widgets": [
     {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
+      "key": "server",
+      "label": {
+        "en": "Webmin server",
+        "fr": "Serveur Webmin",
+        "de": "Webmin-Server",
+        "es": "Servidor Webmin"
+      },
+      "icon": "server",
+      "description": {
+        "en": "Updates waiting, reboot, memory and disk gauges, temperature, load and uptime of a server.",
+        "fr": "Mises à jour en attente, redémarrage, mémoire, disque, température, charge et durée d'un serveur.",
+        "de": "Ausstehende Updates, Neustart, Speicher, Datenträger, Temperatur, Last und Laufzeit eines Servers.",
+        "es": "Actualizaciones pendientes, reinicio, memoria, disco, temperatura, carga y tiempo de un servidor."
+      },
+      "settings": [
         {
-          "key": "device",
+          "key": "server",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "required": true,
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "description": {
+            "en": "The device of a Webmin server.",
+            "fr": "L'appareil d'un serveur Webmin.",
+            "de": "Das Gerät eines Webmin-Servers.",
+            "es": "El dispositivo de un servidor Webmin."
+          }
         }
-      ]
+      ],
+      "action_timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "security_updates_available",
+      "label": {
+        "en": "New security updates",
+        "fr": "Nouvelles mises à jour de sécurité",
+        "de": "Neue Sicherheitsupdates",
+        "es": "Nuevas actualizaciones de seguridad"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "Security updates appear on a Webmin server (read once an hour). Fired again for every new package or version.",
+        "fr": "Des mises à jour de sécurité apparaissent sur un serveur Webmin (lu une fois par heure). Relancé à chaque nouveau paquet ou version.",
+        "de": "Auf einem Webmin-Server erscheinen Sicherheitsupdates (einmal pro Stunde gelesen). Erneut bei jedem neuen Paket oder jeder neuen Version.",
+        "es": "Aparecen actualizaciones de seguridad en un servidor Webmin (leído una vez por hora). Se repite con cada nuevo paquete o versión."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "server",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "description": {
+            "en": "The device of the server. Empty: every server, added to Gladys or not.",
+            "fr": "L'appareil du serveur. Vide : tous les serveurs, ajoutés à Gladys ou non.",
+            "de": "Das Gerät des Servers. Leer: alle Server, ob zu Gladys hinzugefügt oder nicht.",
+            "es": "El dispositivo del servidor. Vacío: todos los servidores, añadidos a Gladys o no."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "server_name",
+          "type": "string",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
+          "key": "packages",
+          "type": "string",
+          "label": {
+            "en": "New packages",
+            "fr": "Nouveaux paquets",
+            "de": "Neue Pakete",
+            "es": "Paquetes nuevos"
+          }
+        },
+        {
+          "key": "new_count",
+          "type": "number",
+          "label": {
+            "en": "New security updates",
+            "fr": "Nouvelles mises à jour de sécurité",
+            "de": "Neue Sicherheitsupdates",
+            "es": "Nuevas actualizaciones de seguridad"
+          }
+        },
+        {
+          "key": "security_count",
+          "type": "number",
+          "label": {
+            "en": "Security updates",
+            "fr": "Mises à jour de sécurité",
+            "de": "Sicherheitsupdates",
+            "es": "Actualizaciones de seguridad"
+          }
+        },
+        {
+          "key": "updates_count",
+          "type": "number",
+          "label": {
+            "en": "Available updates",
+            "fr": "Mises à jour disponibles",
+            "de": "Verfügbare Updates",
+            "es": "Actualizaciones disponibles"
+          }
+        }
+      ]
+    },
+    {
+      "key": "disk_almost_full",
+      "label": {
+        "en": "Disk almost full",
+        "fr": "Disque presque plein",
+        "de": "Datenträger fast voll",
+        "es": "Disco casi lleno"
+      },
+      "description": {
+        "en": "A disk of a Webmin server reaches the chosen use. Announced again once it went 2 points below.",
+        "fr": "Un disque d'un serveur Webmin atteint le taux choisi. Annoncé de nouveau une fois redescendu de 2 points.",
+        "de": "Ein Datenträger eines Webmin-Servers erreicht die gewählte Belegung. Erneut gemeldet, wenn er 2 Punkte darunter war.",
+        "es": "Un disco de un servidor Webmin alcanza el uso elegido. Se avisa de nuevo cuando ha bajado 2 puntos."
+      },
+      "fields": [
+        {
+          "key": "server",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "description": {
+            "en": "The device of the server. Empty: every server, added to Gladys or not.",
+            "fr": "L'appareil du serveur. Vide : tous les serveurs, ajoutés à Gladys ou non.",
+            "de": "Das Gerät des Servers. Leer: alle Server, ob zu Gladys hinzugefügt oder nicht.",
+            "es": "El dispositivo del servidor. Vacío: todos los servidores, añadidos a Gladys o no."
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "select",
+          "label": {
+            "en": "Space used",
+            "fr": "Espace utilisé",
+            "de": "Belegter Speicher",
+            "es": "Espacio usado"
+          },
+          "required": true,
+          "default": "90",
           "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
+            {
+              "value": "80",
+              "label": {
+                "en": "80 %",
+                "fr": "80 %",
+                "de": "80 %",
+                "es": "80 %"
+              }
+            },
+            {
+              "value": "85",
+              "label": {
+                "en": "85 %",
+                "fr": "85 %",
+                "de": "85 %",
+                "es": "85 %"
+              }
+            },
+            {
+              "value": "90",
+              "label": {
+                "en": "90 %",
+                "fr": "90 %",
+                "de": "90 %",
+                "es": "90 %"
+              }
+            },
+            {
+              "value": "95",
+              "label": {
+                "en": "95 %",
+                "fr": "95 %",
+                "de": "95 %",
+                "es": "95 %"
+              }
+            },
+            {
+              "value": "98",
+              "label": {
+                "en": "98 %",
+                "fr": "98 %",
+                "de": "98 %",
+                "es": "98 %"
+              }
+            }
           ]
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "server_name",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          }
+        },
+        {
+          "key": "mount_point",
+          "type": "string",
+          "label": {
+            "en": "Mount point",
+            "fr": "Point de montage",
+            "de": "Einhängepunkt",
+            "es": "Punto de montaje"
+          }
+        },
+        {
+          "key": "used_percent",
+          "type": "number",
+          "label": {
+            "en": "Space used (%)",
+            "fr": "Espace utilisé (%)",
+            "de": "Belegter Speicher (%)",
+            "es": "Espacio usado (%)"
+          }
+        },
+        {
+          "key": "free_gb",
+          "type": "number",
+          "label": {
+            "en": "Free space (GB)",
+            "fr": "Espace libre (Go)",
+            "de": "Freier Speicher (GB)",
+            "es": "Espacio libre (GB)"
+          }
+        },
+        {
+          "key": "threshold",
+          "type": "number",
+          "label": {
+            "en": "Threshold (%)",
+            "fr": "Seuil (%)",
+            "de": "Schwelle (%)",
+            "es": "Umbral (%)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "server_unreachable",
+      "label": {
+        "en": "Server unreachable",
+        "fr": "Serveur injoignable",
+        "de": "Server nicht erreichbar",
+        "es": "Servidor inaccesible"
+      },
+      "description": {
+        "en": "A Webmin server stops answering, two reads in a row (refused credentials do not count).",
+        "fr": "Un serveur Webmin ne répond plus, deux lectures de suite (des identifiants refusés ne comptent pas).",
+        "de": "Ein Webmin-Server antwortet zwei Lesungen hintereinander nicht mehr (abgelehnte Zugangsdaten zählen nicht).",
+        "es": "Un servidor Webmin deja de responder dos lecturas seguidas (las credenciales rechazadas no cuentan)."
+      },
+      "fields": [
+        {
+          "key": "server",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "description": {
+            "en": "The device of the server. Empty: every server, added to Gladys or not.",
+            "fr": "L'appareil du serveur. Vide : tous les serveurs, ajoutés à Gladys ou non.",
+            "de": "Das Gerät des Servers. Leer: alle Server, ob zu Gladys hinzugefügt oder nicht.",
+            "es": "El dispositivo del servidor. Vacío: todos los servidores, añadidos a Gladys o no."
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "server_name",
+          "type": "string",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          }
+        },
+        {
+          "key": "error",
+          "type": "string",
+          "label": {
+            "en": "Reason",
+            "fr": "Raison",
+            "de": "Grund",
+            "es": "Motivo"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "get_server_status",
+      "label": {
+        "en": "State of a Webmin server",
+        "fr": "État d'un serveur Webmin",
+        "de": "Zustand eines Webmin-Servers",
+        "es": "Estado de un servidor Webmin"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Reads a Webmin server: updates, reboot, load, memory, disk, and a summary ready for a message.",
+        "fr": "Lit un serveur Webmin : mises à jour, redémarrage, charge, mémoire, disque, et un résumé prêt pour un message.",
+        "de": "Liest einen Webmin-Server: Updates, Neustart, Last, Speicher, Datenträger und eine fertige Zusammenfassung für eine Nachricht.",
+        "es": "Lee un servidor Webmin: actualizaciones, reinicio, carga, memoria, disco y un resumen listo para un mensaje."
+      },
+      "timeout_seconds": 120,
       "fields": [
         {
-          "key": "device",
+          "key": "server",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "required": true,
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "description": {
+            "en": "The device of a Webmin server.",
+            "fr": "L'appareil d'un serveur Webmin.",
+            "de": "Das Gerät eines Webmin-Servers.",
+            "es": "El dispositivo de un servidor Webmin."
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "name",
+          "type": "string",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          }
+        },
+        {
+          "key": "online",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "Online",
+            "fr": "En ligne",
+            "de": "Online",
+            "es": "En línea"
+          }
+        },
+        {
+          "key": "summary",
+          "type": "string",
+          "label": {
+            "en": "Summary",
+            "fr": "Résumé",
+            "de": "Zusammenfassung",
+            "es": "Resumen"
+          }
+        },
+        {
+          "key": "updates",
+          "type": "number",
+          "label": {
+            "en": "Available updates",
+            "fr": "Mises à jour disponibles",
+            "de": "Verfügbare Updates",
+            "es": "Actualizaciones disponibles"
+          }
+        },
+        {
+          "key": "security_updates",
+          "type": "number",
+          "label": {
+            "en": "Security updates",
+            "fr": "Mises à jour de sécurité",
+            "de": "Sicherheitsupdates",
+            "es": "Actualizaciones de seguridad"
+          }
+        },
+        {
+          "key": "reboot_required",
+          "type": "boolean",
+          "label": {
+            "en": "Reboot required",
+            "fr": "Redémarrage requis",
+            "de": "Neustart erforderlich",
+            "es": "Reinicio necesario"
+          }
+        },
+        {
+          "key": "packages",
+          "type": "string",
+          "label": {
+            "en": "Packages to update",
+            "fr": "Paquets à mettre à jour",
+            "de": "Zu aktualisierende Pakete",
+            "es": "Paquetes por actualizar"
+          }
+        },
+        {
+          "key": "cpu",
+          "type": "number",
+          "label": {
+            "en": "CPU (%)",
+            "fr": "Processeur (%)",
+            "de": "Prozessor (%)",
+            "es": "Procesador (%)"
+          }
+        },
+        {
+          "key": "memory",
+          "type": "number",
+          "label": {
+            "en": "Memory (%)",
+            "fr": "Mémoire (%)",
+            "de": "Arbeitsspeicher (%)",
+            "es": "Memoria (%)"
+          }
+        },
+        {
+          "key": "swap",
+          "type": "number",
+          "label": {
+            "en": "Swap (%)",
+            "fr": "Swap (%)",
+            "de": "Auslagerung (%)",
+            "es": "Swap (%)"
+          }
+        },
+        {
+          "key": "load_1",
+          "type": "number",
+          "label": {
+            "en": "Load (1 min)",
+            "fr": "Charge (1 min)",
+            "de": "Last (1 Min.)",
+            "es": "Carga (1 min)"
+          }
+        },
+        {
+          "key": "load_5",
+          "type": "number",
+          "label": {
+            "en": "Load (5 min)",
+            "fr": "Charge (5 min)",
+            "de": "Last (5 Min.)",
+            "es": "Carga (5 min)"
+          }
+        },
+        {
+          "key": "load_15",
+          "type": "number",
+          "label": {
+            "en": "Load (15 min)",
+            "fr": "Charge (15 min)",
+            "de": "Last (15 Min.)",
+            "es": "Carga (15 min)"
+          }
+        },
+        {
+          "key": "disk_mount",
+          "type": "string",
+          "label": {
+            "en": "Fullest disk",
+            "fr": "Disque le plus plein",
+            "de": "Vollster Datenträger",
+            "es": "Disco más lleno"
+          }
+        },
+        {
+          "key": "disk_percent",
+          "type": "number",
+          "label": {
+            "en": "Fullest disk (%)",
+            "fr": "Disque le plus plein (%)",
+            "de": "Vollster Datenträger (%)",
+            "es": "Disco más lleno (%)"
+          }
+        },
+        {
+          "key": "disk_free_gb",
+          "type": "number",
+          "label": {
+            "en": "Free space (GB)",
+            "fr": "Espace libre (Go)",
+            "de": "Freier Speicher (GB)",
+            "es": "Espacio libre (GB)"
+          }
+        },
+        {
+          "key": "temperature",
+          "type": "number",
+          "label": {
+            "en": "Highest temperature (°C)",
+            "fr": "Température la plus haute (°C)",
+            "de": "Höchste Temperatur (°C)",
+            "es": "Temperatura más alta (°C)"
+          }
+        },
+        {
+          "key": "uptime_days",
+          "type": "number",
+          "label": {
+            "en": "Uptime (days)",
+            "fr": "Durée de fonctionnement (jours)",
+            "de": "Laufzeit (Tage)",
+            "es": "Tiempo en marcha (días)"
+          }
         }
       ]
     }
   ],
-  "widgets": [
+  "config_schema": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Getting started",
+        "fr": "Pour commencer",
+        "de": "Erste Schritte",
+        "es": "Primeros pasos"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Webmin answers Gladys through its XML-RPC interface: create a Webmin user for Gladys with the right to RPC calls, and install the XML::Parser Perl module on the server. Read only: nothing is changed on the server.",
+        "fr": "Webmin répond à Gladys par son interface XML-RPC : créez un utilisateur Webmin pour Gladys avec le droit aux appels RPC, et installez le module Perl XML::Parser sur le serveur. Lecture seule : rien n'est modifié sur le serveur.",
+        "de": "Webmin antwortet Gladys über seine XML-RPC-Schnittstelle: Lege einen Webmin-Benutzer für Gladys mit dem Recht auf RPC-Aufrufe an und installiere das Perl-Modul XML::Parser auf dem Server. Nur lesend: Am Server wird nichts geändert.",
+        "es": "Webmin responde a Gladys mediante su interfaz XML-RPC: cree un usuario de Webmin para Gladys con derecho a llamadas RPC e instale el módulo Perl XML::Parser en el servidor. Solo lectura: no se modifica nada en el servidor."
+      },
+      "links": [
+        {
+          "url": "https://github.com/guim31/gladys-webmin/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation",
+            "de": "Dokumentation",
+            "es": "Documentación"
+          }
+        }
+      ]
+    },
+    {
+      "key": "server_1_url",
+      "type": "string",
+      "label": {
+        "en": "Webmin address",
+        "fr": "Adresse de Webmin",
+        "de": "Webmin-Adresse",
+        "es": "Dirección de Webmin"
+      },
+      "description": {
+        "en": "Host name or IP of the server, port 10000 and HTTPS by default, or the address copied from the browser.",
+        "fr": "Nom ou IP du serveur, port 10000 et HTTPS par défaut, ou l'adresse copiée depuis le navigateur.",
+        "de": "Hostname oder IP des Servers, standardmäßig Port 10000 und HTTPS, oder die aus dem Browser kopierte Adresse.",
+        "es": "Nombre o IP del servidor, puerto 10000 y HTTPS por defecto, o la dirección copiada del navegador."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20 or https://server.lan:10000",
+        "fr": "ex. 192.168.1.20 ou https://serveur.lan:10000",
+        "de": "z. B. 192.168.1.20 oder https://server.lan:10000",
+        "es": "p. ej. 192.168.1.20 o https://servidor.lan:10000"
+      },
+      "required": true,
+      "default": ""
+    },
+    {
+      "key": "server_1_username",
+      "type": "string",
+      "label": {
+        "en": "Webmin user",
+        "fr": "Utilisateur Webmin",
+        "de": "Webmin-Benutzer",
+        "es": "Usuario de Webmin"
+      },
+      "description": {
+        "en": "A Webmin user allowed to make RPC calls, best one created for Gladys (see the documentation).",
+        "fr": "Un utilisateur Webmin autorisé aux appels RPC, idéalement créé pour Gladys (voir la documentation).",
+        "de": "Ein Webmin-Benutzer, der RPC-Aufrufe machen darf, am besten eigens für Gladys angelegt (siehe Dokumentation).",
+        "es": "Un usuario de Webmin autorizado a hacer llamadas RPC, idealmente creado para Gladys (consulte la documentación)."
+      },
+      "placeholder": {
+        "en": "e.g. gladys",
+        "fr": "ex. gladys",
+        "de": "z. B. gladys",
+        "es": "p. ej. gladys"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "server_1_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "server_1_name",
+      "type": "string",
+      "label": {
+        "en": "Name in Gladys (optional)",
+        "fr": "Nom dans Gladys (facultatif)",
+        "de": "Name in Gladys (optional)",
+        "es": "Nombre en Gladys (opcional)"
+      },
+      "description": {
+        "en": "By default, the host name Webmin gives.",
+        "fr": "Par défaut, le nom d'hôte donné par Webmin.",
+        "de": "Standardmäßig der Hostname, den Webmin angibt.",
+        "es": "Por defecto, el nombre de host que indica Webmin."
+      },
+      "placeholder": {
+        "en": "e.g. Home server",
+        "fr": "ex. Serveur maison",
+        "de": "z. B. Heimserver",
+        "es": "p. ej. Servidor de casa"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "second_server",
+      "type": "section",
+      "label": {
+        "en": "Second server (optional)",
+        "fr": "Deuxième serveur (facultatif)",
+        "de": "Zweiter Server (optional)",
+        "es": "Segundo servidor (opcional)"
+      }
+    },
+    {
+      "key": "server_2_url",
+      "type": "string",
+      "label": {
+        "en": "Webmin address",
+        "fr": "Adresse de Webmin",
+        "de": "Webmin-Adresse",
+        "es": "Dirección de Webmin"
+      },
+      "description": {
+        "en": "Host name or IP of the server, port 10000 and HTTPS by default, or the address copied from the browser.",
+        "fr": "Nom ou IP du serveur, port 10000 et HTTPS par défaut, ou l'adresse copiée depuis le navigateur.",
+        "de": "Hostname oder IP des Servers, standardmäßig Port 10000 und HTTPS, oder die aus dem Browser kopierte Adresse.",
+        "es": "Nombre o IP del servidor, puerto 10000 y HTTPS por defecto, o la dirección copiada del navegador."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20 or https://server.lan:10000",
+        "fr": "ex. 192.168.1.20 ou https://serveur.lan:10000",
+        "de": "z. B. 192.168.1.20 oder https://server.lan:10000",
+        "es": "p. ej. 192.168.1.20 o https://servidor.lan:10000"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "server_2_username",
+      "type": "string",
+      "label": {
+        "en": "Webmin user",
+        "fr": "Utilisateur Webmin",
+        "de": "Webmin-Benutzer",
+        "es": "Usuario de Webmin"
+      },
+      "description": {
+        "en": "A Webmin user allowed to make RPC calls, best one created for Gladys (see the documentation).",
+        "fr": "Un utilisateur Webmin autorisé aux appels RPC, idéalement créé pour Gladys (voir la documentation).",
+        "de": "Ein Webmin-Benutzer, der RPC-Aufrufe machen darf, am besten eigens für Gladys angelegt (siehe Dokumentation).",
+        "es": "Un usuario de Webmin autorizado a hacer llamadas RPC, idealmente creado para Gladys (consulte la documentación)."
+      },
+      "placeholder": {
+        "en": "e.g. gladys",
+        "fr": "ex. gladys",
+        "de": "z. B. gladys",
+        "es": "p. ej. gladys"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "server_2_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "server_2_name",
+      "type": "string",
+      "label": {
+        "en": "Name in Gladys (optional)",
+        "fr": "Nom dans Gladys (facultatif)",
+        "de": "Name in Gladys (optional)",
+        "es": "Nombre en Gladys (opcional)"
+      },
+      "description": {
+        "en": "By default, the host name Webmin gives.",
+        "fr": "Par défaut, le nom d'hôte donné par Webmin.",
+        "de": "Standardmäßig der Hostname, den Webmin angibt.",
+        "es": "Por defecto, el nombre de host que indica Webmin."
+      },
+      "placeholder": {
+        "en": "e.g. Home server",
+        "fr": "ex. Serveur maison",
+        "de": "z. B. Heimserver",
+        "es": "p. ej. Servidor de casa"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "third_server",
+      "type": "section",
+      "label": {
+        "en": "Third server (optional)",
+        "fr": "Troisième serveur (facultatif)",
+        "de": "Dritter Server (optional)",
+        "es": "Tercer servidor (opcional)"
+      }
+    },
+    {
+      "key": "server_3_url",
+      "type": "string",
+      "label": {
+        "en": "Webmin address",
+        "fr": "Adresse de Webmin",
+        "de": "Webmin-Adresse",
+        "es": "Dirección de Webmin"
+      },
+      "description": {
+        "en": "Host name or IP of the server, port 10000 and HTTPS by default, or the address copied from the browser.",
+        "fr": "Nom ou IP du serveur, port 10000 et HTTPS par défaut, ou l'adresse copiée depuis le navigateur.",
+        "de": "Hostname oder IP des Servers, standardmäßig Port 10000 und HTTPS, oder die aus dem Browser kopierte Adresse.",
+        "es": "Nombre o IP del servidor, puerto 10000 y HTTPS por defecto, o la dirección copiada del navegador."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20 or https://server.lan:10000",
+        "fr": "ex. 192.168.1.20 ou https://serveur.lan:10000",
+        "de": "z. B. 192.168.1.20 oder https://server.lan:10000",
+        "es": "p. ej. 192.168.1.20 o https://servidor.lan:10000"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "server_3_username",
+      "type": "string",
+      "label": {
+        "en": "Webmin user",
+        "fr": "Utilisateur Webmin",
+        "de": "Webmin-Benutzer",
+        "es": "Usuario de Webmin"
+      },
+      "description": {
+        "en": "A Webmin user allowed to make RPC calls, best one created for Gladys (see the documentation).",
+        "fr": "Un utilisateur Webmin autorisé aux appels RPC, idéalement créé pour Gladys (voir la documentation).",
+        "de": "Ein Webmin-Benutzer, der RPC-Aufrufe machen darf, am besten eigens für Gladys angelegt (siehe Dokumentation).",
+        "es": "Un usuario de Webmin autorizado a hacer llamadas RPC, idealmente creado para Gladys (consulte la documentación)."
+      },
+      "placeholder": {
+        "en": "e.g. gladys",
+        "fr": "ex. gladys",
+        "de": "z. B. gladys",
+        "es": "p. ej. gladys"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "server_3_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "server_3_name",
+      "type": "string",
+      "label": {
+        "en": "Name in Gladys (optional)",
+        "fr": "Nom dans Gladys (facultatif)",
+        "de": "Name in Gladys (optional)",
+        "es": "Nombre en Gladys (opcional)"
+      },
+      "description": {
+        "en": "By default, the host name Webmin gives.",
+        "fr": "Par défaut, le nom d'hôte donné par Webmin.",
+        "de": "Standardmäßig der Hostname, den Webmin angibt.",
+        "es": "Por defecto, el nombre de host que indica Webmin."
+      },
+      "placeholder": {
+        "en": "e.g. Home server",
+        "fr": "ex. Serveur maison",
+        "de": "z. B. Heimserver",
+        "es": "p. ej. Servidor de casa"
+      },
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Webmin is read. The package updates are read once an hour whatever this interval.",
+        "fr": "Fréquence de lecture de Webmin. Les mises à jour des paquets sont lues une fois par heure quel que soit cet intervalle.",
+        "de": "Wie oft Webmin gelesen wird. Die Paketupdates werden unabhängig davon einmal pro Stunde gelesen.",
+        "es": "Con qué frecuencia se lee Webmin. Las actualizaciones de paquetes se leen una vez por hora sea cual sea este intervalo."
+      },
+      "required": false,
+      "default": "300",
+      "options": [
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "600",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        }
+      ]
+    },
+    {
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "Webmin creates a self-signed certificate at installation: keep this ticked unless the server has a certificate Gladys trusts.",
+        "fr": "Webmin crée un certificat auto-signé à l'installation : laissez coché sauf si le serveur a un certificat reconnu.",
+        "de": "Webmin erstellt bei der Installation ein selbstsigniertes Zertifikat: Lass dies aktiviert, außer der Server hat ein anerkanntes Zertifikat.",
+        "es": "Webmin crea un certificado autofirmado al instalarse: déjelo marcado salvo que el servidor tenga un certificado reconocido."
+      },
+      "required": false,
+      "default": true
+    },
+    {
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de las funciones"
+      },
+      "description": {
+        "en": "Names given to the features when the device is added, and language of the texts sent to scenes.",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout de l'appareil, et langue des textes envoyés aux scènes.",
+        "de": "Namen der Funktionen beim Hinzufügen des Geräts und Sprache der Texte für Szenen.",
+        "es": "Nombres de las funciones al añadir el dispositivo e idioma de los textos enviados a las escenas."
+      },
+      "required": false,
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ]
 }

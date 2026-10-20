@@ -30,6 +30,23 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration keeps and sends:
+
+- The address, Webmin user name and password of each server are stored by
+  Gladys in the integration configuration; the password is a secret field,
+  never written to the logs nor shown back.
+- `/data/webmin-state.json` holds what the scene triggers compare with: the
+  disk thresholds already announced and the security packages already seen
+  (names and versions), per server slot. No credential.
+- Network: XML-RPC requests (HTTP Basic authentication) from the container to
+  the configured Webmin servers only, on the local network; HTTPS by default,
+  certificate checks off only when "Accept self-signed certificates" is
+  ticked. Nothing else is contacted.
+- A Webmin user allowed to make RPC calls can call any Webmin function, as
+  root: the integration calls only six reading functions (see the
+  documentation), and the documentation asks to restrict that user to the
+  address of Gladys.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+Webmin itself, and the other third-party services the integration talks to.

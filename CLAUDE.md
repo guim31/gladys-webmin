@@ -16,8 +16,8 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "disk"    # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -31,16 +31,25 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        servers, reading timer, states, scene events, views
+src/alerts.js                     disk steps, security packages seen, features once seen (in /data)
+src/devices.js                    the server device; feature names (4 languages)
+src/webmin/xmlrpc.js              XML-RPC encoder/decoder (no dependency)
+src/webmin/client.js              the Webmin calls, hourly updates, errors by kind
+src/webmin/model.js               raw answers -> one snapshot
+src/webmin/http.js                node:http/https request (self-signed certificates on request)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    dashboard widget `server` (manifest `widgets`)
+src/texts.js                      connection, error, report, summary texts (4 languages), formats
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+src/store.js                      /data/webmin-state.json (what the triggers compare with)
+src/logs.js                       repeated failures logged once, then once when they heal
+gladys-assistant-integration.json manifest: name, config_schema, actions, triggers, widget...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeWebmin.js (real answers in test/fixtures/webmin)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +79,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget texts, feature names, manifest texts, and
+  `docs/{en,fr,de,es}.md`, kept in sync (`test/i18n.test.js`).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +207,80 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Webmin (propre à ce dépôt)
+
+- **API** : XML-RPC de Webmin, `POST /xmlrpc.cgi` (miniserv, port 10000, HTTPS auto-signé par
+  défaut), HTTP Basic. Méthode `module.fonction` = fonction Perl de la bibliothèque du module,
+  **exécutée en root** : xmlrpc.cgi **ignore les droits par module** de l'utilisateur (vérifié :
+  un utilisateur sans aucun module lit tout). Seul compte le droit **`rpc`** (« Can accept RPC
+  calls? », `/etc/webmin/<user>.acl` : `rpc=1`). D'où la doc : utilisateur dédié, restreint à
+  l'IP de Gladys.
+- **Appels** (Webmin 2.670) : `system-status.collect_system_info('', ['package-updates'])`
+  (le second argument saute la liste des paquets ; `load` = [1, 5, 15 min, MHz, modèle, vendeur,
+  cache, **cœurs**], `mem` en **ko** = [total, libre+cache, swap total, swap libre…], `cpu` =
+  [user, kernel, **idle**, io, vm] en %, `disk_fs` en octets avec `used_percent`) ;
+  `proc.get_system_uptime` = **[jours, heures, minutes]** (la lib Python de HA les nomme à tort
+  jours/minutes/secondes ; vide si la commande `uptime` manque) ; `webmin.get_webmin_version` =
+  **un double** (`2.670` décodé en 2.67 : reformaté en `toFixed(3)`) ;
+  `webmin.get_system_hostname` (point final d'un FQDN retiré) ;
+  `package-updates.list_possible_updates` (`security` = `1` ou `""`, d'après la source
+  `…-security`) ; `package-updates.check_reboot_required` (1/0).
+- **Réponses** : entiers > 32 bits en `<int>`, membres de struct dans un ordre quelconque,
+  retours à la ligne autour des valeurs typées, chaîne de faute parfois en **base64**.
+  **Fautes** : 1 = pas de droit RPC (« Invalid user for RPC »), 2 = **XML::Parser absent**
+  (`libxml-parser-perl`, absent d'une Debian minimale : piège n° 1 des utilisateurs), 5 = module
+  absent, 7 = erreur Perl de la fonction.
+- **HTTP** : 401 identifiants refusés ; **403 = adresse bloquée** après 5 échecs
+  (`blockhost_failures=5`, `blockhost_time=60`), **même avec le bon mot de passe** ensuite. D'où
+  l'attente de 30 min après un refus (sauf action de l'utilisateur). HTTP sur le port HTTPS :
+  **302** vers https.
+- **Mises à jour** : `list_possible_updates` sans argument lit le **cache du module** (6 h,
+  `cache_time` de `package-updates`), **et le cache des paquets installés** : après un
+  `apt upgrade` hors Webmin, un paquet reste listé jusqu'à l'expiration. Pas de `nocache=1`
+  (lancerait le gestionnaire de paquets toutes les heures). Lues une fois par heure, et à chaque
+  action de l'utilisateur. Le hub compare les lectures par **compteur** (`updatesSerial`), pas
+  par horodatage (deux lectures dans la même milliseconde en test).
+- **Déclencheur sécurité** : nouveaux couples `nom=version` parmi les paquets de sécurité ;
+  première lecture enregistrée sans événement ; un paquet installé puis de nouveau en attente
+  dans une version plus récente redéclenche.
+- **Relecture indépendante (20/10/2026)**, corrigé et figé par des tests : Perl type une valeur
+  d'après sa forme, une **version `20240203` arrive en `<int>`** (gardée en texte) ; « Serveur
+  injoignable » **persisté dans `/data`** (pas de nouvelle annonce après un redémarrage) ; adresse
+  d'un emplacement changée **pendant l'arrêt** détectée (`checkAddress`) ; enregistrer la
+  configuration relit tout de suite (`force`) ; une lecture forcée pendant une lecture du minuteur
+  en refait une ; une réponse illisible d'un appel facultatif ne fait pas tomber le serveur ;
+  action de scène à `timeout_seconds: 120` (accepté depuis la 5.1.0). Non corrigé : une liste de
+  mises à jour vide **passagère** puis normale réannonce les paquets de sécurité (comparaison à
+  la lecture précédente seulement).
+- **Structure stable** : swap, température, mises à jour et redémarrage, une fois vus, restent
+  dans l'appareil (`Watcher.known`) : un module momentanément illisible ne fait pas proposer
+  « Mettre à jour ».
+- **Disques** : `disk_fs` vient de `mount::local_disk_space` ; dans un conteneur, Webmin liste
+  les fichiers montés (`/etc/hosts`…) : écartés, ainsi que `tmpfs`, `overlay`, `squashfs`.
+
+## Vérifié sur un vrai Webmin
+
+Le 20/10/2026 : Debian 12 + Webmin 2.670 (dépôt officiel) en Docker
+(`gladys-test-webmin-server`, réseau en pont, aucun port publié), utilisateur `gladys` avec
+`rpc=1` ; quatre mises à jour en attente dont deux de sécurité (paquets rétrogradés),
+`/var/run/reboot-required`. Image de l'intégration lancée avec `--cap-drop ALL --security-opt
+no-new-privileges --read-only --memory 256m --pids-limit 256`, volume `/data`.
+
+- **Sans Gladys** : reconnexion du SDK en backoff, pas de plantage, aucun secret dans les logs,
+  ~19 Mo au repos, arrêt propre (code 0).
+- **Client réel** : lecture en ~1,3 s ; certificat auto-signé refusé sans l'option (`tls`), HTTP
+  sur le port HTTPS (`redirect`), port fermé et hôte inconnu (`unreachable`), mauvais
+  utilisateur (`auth`), droit RPC retiré (`rpc_denied`), 5 mauvais mots de passe puis le bon
+  (`blocked`), XML::Parser absent (faute 2, vue avant installation).
+- **Intégration complète** (faux Gladys du SDK, noms en français, un second serveur injoignable) :
+  appareil découvert, 12 états à la création, widget validé, action de scène, « Tester la
+  connexion », « Serveur injoignable ». Puis **dans un second processus** (état gardé dans
+  `/data`) : `tzdata` rétrogradé → « Nouvelles mises à jour de sécurité » avec `tzdata` ; serveur
+  arrêté → « Serveur injoignable ».
+- Non vérifié : une vraie instance Gladys (rendu du widget, éditeur de scènes), un disque qui se
+  remplit sur le vrai serveur (testé avec les fixtures), les températures réelles (fixture de
+  HA), la famille Red Hat (`needs-restarting`, drapeau sécurité), FreeBSD.
 
 ## Store
 
