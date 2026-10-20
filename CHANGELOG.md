@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-20
+
 ### Added
 
 - Up to three Webmin servers, read over XML-RPC with a dedicated Webmin user,
@@ -26,4 +28,5 @@ the notes of the version's GitHub Release.
   problem (XML::Parser missing, no RPC right, address blocked by Webmin…).
 - Every text in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-webmin/commits/main
+[Unreleased]: https://github.com/guim31/gladys-webmin/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-webmin/releases/tag/v1.0.0
