@@ -20,6 +20,8 @@ const number = (value) => {
   return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : null;
 };
 const list = (value) => (Array.isArray(value) ? value : []);
+const text = (value) =>
+  typeof value === 'string' || typeof value === 'number' ? String(value) : null;
 const clampPercent = (value) => (value === null ? null : Math.min(100, Math.max(0, value)));
 
 // What Webmin lists among the local disks but is no disk of the server: the
@@ -83,10 +85,12 @@ function parseUpdates(raw) {
     return null;
   }
   const packages = raw.packages
+    // Webmin types a value by its look: a version such as 20240203 or 1.10
+    // arrives as a number.
     .map((item) => ({
-      name: typeof item.name === 'string' ? item.name : String(item.update ?? ''),
-      version: typeof item.version === 'string' ? item.version : null,
-      oldVersion: typeof item.oldversion === 'string' ? item.oldversion : null,
+      name: text(item.name) ?? text(item.update) ?? '',
+      version: text(item.version),
+      oldVersion: text(item.oldversion),
       security: Number(item.security) === 1 || item.security === true,
     }))
     .filter((item) => item.name)

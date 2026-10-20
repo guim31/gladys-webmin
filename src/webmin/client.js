@@ -215,12 +215,15 @@ export class WebminClient {
     }
   }
 
-  /** A call whose failure (a missing module, a Perl error) is not a server failure. */
+  /**
+   * A call whose failure (a missing module, a Perl error, an answer this
+   * decoder cannot read) is not a server failure: the main call succeeded.
+   */
   async optional(method, params = []) {
     try {
       return { value: await this.call(method, params) };
     } catch (err) {
-      if (err.kind === ERROR_KINDS.FAULT) {
+      if (err.kind === ERROR_KINDS.FAULT || err.kind === ERROR_KINDS.NOT_WEBMIN) {
         return { value: null, fault: err };
       }
       throw err;
@@ -253,7 +256,9 @@ export class WebminClient {
       this.static = {
         version: formatVersion(version.value),
         hostname:
-          typeof hostname.value === 'string' ? hostname.value.trim().replace(/\.+$/, '') : null,
+          typeof hostname.value === 'string' || typeof hostname.value === 'number'
+            ? String(hostname.value).trim().replace(/\.+$/, '') || null
+            : null,
       };
       this.detectedAt = now;
     }

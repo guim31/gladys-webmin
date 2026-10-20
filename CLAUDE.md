@@ -244,6 +244,15 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Déclencheur sécurité** : nouveaux couples `nom=version` parmi les paquets de sécurité ;
   première lecture enregistrée sans événement ; un paquet installé puis de nouveau en attente
   dans une version plus récente redéclenche.
+- **Relecture indépendante (20/10/2026)**, corrigé et figé par des tests : Perl type une valeur
+  d'après sa forme, une **version `20240203` arrive en `<int>`** (gardée en texte) ; « Serveur
+  injoignable » **persisté dans `/data`** (pas de nouvelle annonce après un redémarrage) ; adresse
+  d'un emplacement changée **pendant l'arrêt** détectée (`checkAddress`) ; enregistrer la
+  configuration relit tout de suite (`force`) ; une lecture forcée pendant une lecture du minuteur
+  en refait une ; une réponse illisible d'un appel facultatif ne fait pas tomber le serveur ;
+  action de scène à `timeout_seconds: 120` (accepté depuis la 5.1.0). Non corrigé : une liste de
+  mises à jour vide **passagère** puis normale réannonce les paquets de sécurité (comparaison à
+  la lecture précédente seulement).
 - **Structure stable** : swap, température, mises à jour et redémarrage, une fois vus, restent
   dans l'appareil (`Watcher.known`) : un module momentanément illisible ne fait pas proposer
   « Mettre à jour ».

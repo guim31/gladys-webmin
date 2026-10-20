@@ -141,6 +141,10 @@ export class WebminHub {
       this.store.save(this.watcher.saved);
     }
     for (const server of config.servers) {
+      // Also when the address changed while the integration was stopped.
+      if (this.watcher.checkAddress(server.slot, server.url)) {
+        this.store.save(this.watcher.saved);
+      }
       const record = this.records.get(server.slot);
       if (record) {
         record.server = server; // a new name only
@@ -151,7 +155,9 @@ export class WebminHub {
     if (languageChanged) {
       this.discovered = null;
     }
-    await this.pollAll({ publish: true });
+    // A configuration saved is a user action: credentials refused before are
+    // tried again at once.
+    await this.pollAll({ publish: true, force: true });
     this.schedulePoll();
   }
 
@@ -173,7 +179,8 @@ export class WebminHub {
       readAt: 0,
       error: null,
       failures: 0,
-      down: false,
+      // Announced unreachable before a restart: not announced again.
+      down: this.watcher.isDown(server.slot),
       polling: null,
       retryTimer: null,
       dropped: false,
@@ -354,7 +361,12 @@ export class WebminHub {
     ) {
       return Promise.resolve(false);
     }
-    record.polling ??= this.read(record, { force }).finally(() => {
+    if (record.polling) {
+      // A user action during a timer read: read again once it is over, so
+      // that the updates are read too.
+      return force ? record.polling.then(() => this.poll(record, { force })) : record.polling;
+    }
+    record.polling = this.read(record, { force }).finally(() => {
       record.polling = null;
     });
     return record.polling;
@@ -395,6 +407,7 @@ export class WebminHub {
     record.down = false;
     record.error = null;
     record.readAt = now;
+    this.watcher.setDown(slot, false);
 
     const server = this.serverName(record);
     const serverDevice = this.serverId(slot);
@@ -459,6 +472,8 @@ export class WebminHub {
     }
     if (!record.down && record.failures >= this.timings.downAfterFailures) {
       record.down = true;
+      this.watcher.setDown(record.server.slot, true);
+      this.store.save(this.watcher.saved);
       await this.fireEvent(TRIGGERS.UNREACHABLE, {
         server: this.serverId(record.server.slot),
         server_name: this.serverName(record),

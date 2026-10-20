@@ -49,6 +49,39 @@ export class Watcher {
     return entry;
   }
 
+  /**
+   * The address a slot was read at: another one may be another machine,
+   * whose updates must not be compared with the previous one's.
+   * @returns {boolean} whether the slot was forgotten
+   */
+  checkAddress(slot, url) {
+    const entry = object(this.saved.servers[slot]);
+    if (typeof entry.url === 'string' && entry.url !== url) {
+      this.forgetSlot(slot);
+      this.server(slot).url = url;
+      return true;
+    }
+    if (entry.url !== url) {
+      this.server(slot).url = url;
+      return true;
+    }
+    return false;
+  }
+
+  /** Whether "server unreachable" was announced and not healed (survives a restart). */
+  isDown(slot) {
+    return object(this.saved.servers[slot]).down === true;
+  }
+
+  setDown(slot, down) {
+    const entry = this.server(slot);
+    if ((entry.down === true) === down) {
+      return false;
+    }
+    entry.down = down;
+    return true;
+  }
+
   /** What the server has shown once, for its device structure. */
   known(slot) {
     const entry = object(this.saved.servers[slot]);

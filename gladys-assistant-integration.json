@@ -375,6 +375,7 @@
         "de": "Liest einen Webmin-Server: Updates, Neustart, Last, Speicher, Datenträger und eine fertige Zusammenfassung für eine Nachricht.",
         "es": "Lee un servidor Webmin: actualizaciones, reinicio, carga, memoria, disco y un resumen listo para un mensaje."
       },
+      "timeout_seconds": 120,
       "fields": [
         {
           "key": "server",

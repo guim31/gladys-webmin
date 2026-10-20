@@ -65,8 +65,8 @@ User documentation: [English](docs/en.md) · [Français](docs/fr.md) ·
   shows, the package list skipped) and `proc::get_system_uptime`.
 - Once an hour: `package-updates::list_possible_updates` and
   `package-updates::check_reboot_required`. They answer from the cache of the
-  Webmin module (6 hours by default): Gladys never makes the server run its
-  package manager.
+  Webmin module (6 hours by default); only when that cache has expired does
+  Webmin run the package manager, as its own interface would.
 - Only the states that change are sent, the ones that move at every read at
   most once a minute, with a heartbeat every 6 hours. What the triggers
   compare with is kept under `/data`, so a restart neither misses nor repeats

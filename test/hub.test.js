@@ -387,3 +387,82 @@ test('State of a Webmin server: every figure and a summary', async (t) => {
   const unknown = await world.fake.sceneAction('get_server_status', { server: 'nope' });
   assert.equal(unknown.success, false);
 });
+
+// --- Found by the independent review --------------------------------------------
+
+test('a server still off after a restart is not announced unreachable again', async (t) => {
+  const first = await serverWorld(t);
+  first.webmin.down = true;
+  await first.hub.pollAll();
+  await first.hub.pollAll();
+  assert.equal(eventsOf(first, TRIGGERS.UNREACHABLE).length, 1);
+  await first.app.stop();
+  const second = await serverWorld(t, { webmin: first.webmin, dataDir: first.dataDir });
+  await second.hub.pollAll();
+  await second.hub.pollAll();
+  assert.equal(eventsOf(second, TRIGGERS.UNREACHABLE).length, 0);
+  // Back, then off again: announced.
+  first.webmin.down = false;
+  await second.hub.pollAll();
+  first.webmin.down = true;
+  await second.hub.pollAll();
+  await second.hub.pollAll();
+  assert.equal(eventsOf(second, TRIGGERS.UNREACHABLE).length, 1);
+});
+
+test('a slot pointed at another machine while stopped compares nothing with the old one', async (t) => {
+  const first = await serverWorld(t);
+  await first.app.stop();
+  const other = new FakeWebmin({ updates: [...loadFixture('updates.xml'), SUDO] });
+  const second = await createWorld({
+    servers: { [URL_2]: other },
+    dataDir: first.dataDir,
+    config: {
+      server_1_url: URL_2,
+      server_1_username: USERNAME,
+      server_1_password: PASSWORD,
+      language: 'en',
+    },
+  });
+  t.after(() => second.app.stop());
+  assert.deepEqual(eventsOf(second, TRIGGERS.SECURITY), [], 'recorded silently');
+});
+
+test('a security update whose version looks like a number is still compared by version', async (t) => {
+  const world = await serverWorld(t);
+  world.webmin.updates = [{ name: 'tool', version: 20240203, security: 1 }];
+  await world.hub.pollAll({ force: true });
+  world.webmin.updates = [{ name: 'tool', version: 20240301, security: 1 }];
+  await world.hub.pollAll({ force: true });
+  const events = eventsOf(world, TRIGGERS.SECURITY);
+  assert.deepEqual(
+    events.map((event) => event.data.packages),
+    ['tool', 'tool'],
+  );
+});
+
+test('a forced read during a timer read reads the updates too', async (t) => {
+  const world = await serverWorld(t);
+  world.webmin.calls.length = 0;
+  const timer = world.hub.pollAll();
+  const forced = world.hub.pollAll({ force: true });
+  await Promise.all([timer, forced]);
+  assert.ok(world.webmin.calls.includes(METHODS.UPDATES));
+});
+
+test('an unreadable optional answer does not take the server down', async (t) => {
+  const webmin = new FakeWebmin();
+  const methods = webmin.methods.bind(webmin);
+  webmin.methods = () => ({ ...methods(), [METHODS.HOSTNAME]: () => [[[]]] });
+  const original = webmin.handle.bind(webmin);
+  webmin.handle = (path, options) =>
+    options.body.includes(METHODS.UPTIME)
+      ? {
+          status: 200,
+          headers: {},
+          body: '<methodResponse><params><param><value><string><![CDATA[x]]></string></value></param></params></methodResponse>',
+        }
+      : original(path, options);
+  const world = await serverWorld(t, { webmin });
+  assert.equal(world.fake.connectionStatus.connected, true);
+});
