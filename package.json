@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-webmin",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "Gladys Assistant integration for Webmin: package updates, reboot required, load, memory and disks of your Linux servers.",
   "type": "module",
   "main": "index.js",
   "scripts": {

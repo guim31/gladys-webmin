@@ -1,0 +1,177 @@
+# Webmin
+
+[Webmin](https://webmin.com) es la interfaz web de administración de servidores
+Linux y BSD. Esta integración lee hasta tres servidores Webmin y trae a Gladys
+lo que una herramienta de supervisión no dice: las **actualizaciones de
+paquetes** pendientes en cada servidor, las de **seguridad** aparte, y si el
+servidor **espera un reinicio**. Además, lo esencial del panel de Webmin:
+carga, procesador, memoria, swap, el disco más lleno, la temperatura más alta,
+el tiempo en marcha. Las escenas pueden reaccionar a nuevas actualizaciones de
+seguridad, a un disco que se llena o a un servidor que deja de responder, y un
+widget resume un servidor. Todo se queda en su red local, y nunca se modifica
+nada en el servidor.
+
+Probada con un Webmin 2.670 real en Debian 12 (Docker): actualizaciones y
+actualizaciones de seguridad, reinicio necesario, contraseña incorrecta,
+dirección bloqueada, usuario sin derecho RPC, certificado autofirmado. Todavía
+no en un Gladys real ni en todas las distribuciones: sus comentarios son
+bienvenidos en [las issues](https://github.com/guim31/gladys-webmin/issues).
+
+## Lo que necesita
+
+- Gladys Assistant 5.1.0 o posterior.
+- Webmin (2.x probado) en cada servidor, accesible desde la máquina de Gladys
+  (puerto 10000, HTTPS, por defecto).
+- El módulo Perl **XML::Parser** en el servidor: `apt install
+libxml-parser-perl` (Debian, Ubuntu), `dnf install perl-XML-Parser` (Fedora,
+  Rocky, Alma). Sin él, Webmin no responde a ninguna llamada XML-RPC.
+- Para las actualizaciones: el módulo de Webmin **Software Package Updates**
+  (instalado con Webmin en las distribuciones habituales).
+
+## Primeros pasos
+
+### 1. Crear un usuario de Webmin para Gladys
+
+En Webmin, abra **Webmin → Webmin Users → Create a new Webmin user**:
+
+- nombre `gladys` y una contraseña larga;
+- **Can accept RPC calls?**: **Yes**;
+- no hace falta ningún módulo: déjelos todos sin marcar;
+- recomendado, **IP access control**: permita solo la dirección de la máquina
+  de Gladys.
+
+Por qué importa la restricción: mediante XML-RPC, Webmin deja que ese usuario
+llame a cualquier función de Webmin, como root. La integración solo llama a
+funciones de lectura (enumeradas en la sección Límites), pero la contraseña
+vale tanto como una contraseña de root: resérvela para Gladys y permítala solo
+desde la dirección de Gladys.
+
+### 2. Configurar la integración
+
+En la pestaña **Configuración**, para cada servidor:
+
+- **Dirección de Webmin**: `192.168.1.20`, `servidor.lan`, o la dirección
+  copiada del navegador (`https://servidor.lan:10000/`). Con un simple nombre
+  o una IP se suponen HTTPS y el puerto 10000;
+- **Usuario de Webmin** y **Contraseña**: el usuario creado arriba;
+- **Nombre en Gladys** (opcional): por defecto, el nombre de host que indica
+  Webmin.
+
+Opciones: **Intervalo de actualización** (1 a 10 minutos, 5 por defecto; las
+actualizaciones se leen una vez por hora sea cual sea este intervalo),
+**Aceptar certificados autofirmados** (marcado por defecto: Webmin crea uno al
+instalarse), **Idioma de los nombres de las funciones**.
+
+Guarde y pulse **Probar la conexión**: una línea por servidor, con la versión
+de Webmin, el número de discos y de actualizaciones.
+
+### 3. Añadir los dispositivos
+
+Abra la pestaña **Descubrir**: un dispositivo por servidor que ha respondido.
+Añada los que quiera seguir.
+
+## Los dispositivos
+
+Un dispositivo por servidor, con estas funciones (nombres en el idioma elegido
+en la configuración):
+
+- **En línea**: 1 cuando el servidor responde, 0 en cuanto deja de responder
+  dos lecturas seguidas;
+- **Procesador**, **Memoria**, **Swap** (si el servidor tiene swap): uso en %;
+- **Carga (1 min)**, **Carga (5 min)**, **Carga (15 min)**: las cargas medias;
+- **Disco más lleno**: uso del disco local más lleno, en %;
+- **Temperatura más alta**: el núcleo de procesador o el disco más caliente,
+  cuando Webmin lee temperaturas (lm-sensors, hddtemp o smartmontools en el
+  servidor);
+- **Tiempo en marcha**: en días;
+- **Actualizaciones disponibles** y **Actualizaciones de seguridad**: número
+  de paquetes;
+- **Reinicio necesario**: 1 cuando el servidor espera un reinicio (Debian y
+  Ubuntu: `/var/run/reboot-required`; familia Red Hat: `needs-restarting`).
+
+Las actualizaciones vienen de la caché del módulo de Webmin Software Package
+Updates, válida 6 horas por defecto: Gladys ve una nueva actualización cuando
+Webmin la ve. Para verlas antes, reduzca **Cache time** en la configuración de
+ese módulo.
+
+## Panel
+
+El widget **Servidor Webmin** (elija el servidor en sus ajustes) muestra el
+número de actualizaciones (naranja si hay pendientes, rojo si alguna es de
+seguridad), indicadores de memoria y del disco más lleno, la temperatura más
+alta, luego los paquetes de seguridad, el reinicio, el espacio libre, la carga,
+el swap y el tiempo en marcha. El botón **Actualizar** vuelve a leer Webmin,
+actualizaciones incluidas.
+
+## Escenas
+
+### Disparadores
+
+- **Nuevas actualizaciones de seguridad**: aparecen actualizaciones de
+  seguridad en un servidor (leído una vez por hora). Se repite con cada nuevo
+  paquete o nueva versión. Filtro: servidor. Variables: servidor, paquetes
+  nuevos, nuevas actualizaciones de seguridad, actualizaciones de seguridad,
+  actualizaciones disponibles.
+- **Disco casi lleno**: un disco alcanza el 80, 85, 90, 95 o 98 % (el umbral es
+  un filtro del disparador), para cada disco que enumera Webmin, no solo el
+  más lleno. Se avisa de nuevo cuando ha bajado 2 puntos. Variables: servidor,
+  punto de montaje, espacio usado, espacio libre (GB), umbral.
+- **Servidor inaccesible**: el servidor deja de responder dos lecturas
+  seguidas (las credenciales rechazadas no cuentan). Variables: servidor,
+  motivo.
+
+Los disparadores valen para cada servidor configurado, añadido a Gladys o no,
+y sobreviven a un reinicio de la integración: no se pierde nada ni se avisa dos
+veces.
+
+### Acciones
+
+- **Estado de un servidor Webmin**: lee un servidor y devuelve cada valor
+  (actualizaciones, actualizaciones de seguridad, reinicio necesario, paquetes
+  por actualizar, procesador, memoria, swap, cargas, disco más lleno, espacio
+  libre, temperatura, tiempo en marcha) y un **resumen** listo para un
+  mensaje, por ejemplo `NAS: 4 actualización(es), 2 de seguridad (libssl3,
+openssl), reinicio necesario, carga 0,42, memoria 66 %, disco / 87 % (59 GB
+libres)`.
+
+### Ideas de escenas
+
+- Cada lunes a las 9 h, **Estado de un servidor Webmin**, y luego el resumen a
+  su teléfono: la lista de mantenimiento de la semana.
+- **Nuevas actualizaciones de seguridad** → un mensaje de Telegram con los
+  paquetes.
+- Cuando **Reinicio necesario** pasa a 1 y no hay nadie en casa, un
+  recordatorio para reiniciar por la noche.
+- **Disco casi lleno** al 90 % → una notificación con el punto de montaje.
+
+## Solución de problemas
+
+- _instale el módulo Perl XML::Parser_: instale `libxml-parser-perl` (o
+  `perl-XML-Parser`) en el servidor, no hace falta reiniciar Webmin.
+- _este usuario de Webmin no puede hacer llamadas RPC_: ponga **Can accept RPC
+  calls?** en Yes para ese usuario.
+- _nombre de usuario o contraseña rechazados_: compruébelos. Tras 5 inicios de
+  sesión fallidos, Webmin bloquea la dirección de Gladys durante 60 segundos
+  (_Webmin bloquea Gladys…_): la integración espera entonces 30 minutos antes
+  de volver a intentarlo, o **Probar la conexión** al instante.
+- _certificado rechazado_: marque **Aceptar certificados autofirmados**.
+- _la dirección redirige_: Webmin está en HTTPS: introduzca `https://…`.
+- _no hay ningún Webmin en esta dirección_: compruebe el puerto (10000 por
+  defecto).
+- Actualizaciones desconocidas en el informe de prueba: falta el módulo
+  Software Package Updates o no puede leer el gestor de paquetes.
+
+## Límites
+
+- Solo lectura: la integración nunca instala una actualización ni reinicia un
+  servidor. Funciones llamadas: `system-status::collect_system_info`,
+  `proc::get_system_uptime`, `webmin::get_webmin_version`,
+  `webmin::get_system_hostname`, `package-updates::list_possible_updates`,
+  `package-updates::check_reboot_required`.
+- Hasta tres servidores. Usermin y Virtualmin no se leen.
+- Actualizaciones tan recientes como la caché de Webmin (6 horas por defecto),
+  leídas una vez por hora.
+- La marca de seguridad viene del origen del paquete (repositorios
+  `…-security` de Debian y Ubuntu): otras distribuciones pueden no mostrar
+  ninguna.
+- Sin relación con Webmin.
