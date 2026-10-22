@@ -1,6 +1,6 @@
 {
   "name": "gladys-webmin",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Gladys Assistant integration for Webmin: package updates, reboot required, load, memory and disks of your Linux servers.",
   "type": "module",
